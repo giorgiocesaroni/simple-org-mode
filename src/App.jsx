@@ -13,8 +13,6 @@ function App() {
    const textAreaRef = useRef(null);
 
    useEffect(() => {
-      printTree(parse(text.value));
-
       if (text.caret >= 0) {
          text.target.setSelectionRange(
             text.caret + tabSize,
@@ -43,8 +41,6 @@ function App() {
          const caret = event.target.selectionEnd;
          const lastNewLine = text.value.lastIndexOf("\n", caret);
          const indentationLevel = text.value.slice(lastNewLine).search(/\S/);
-
-         console.log({ caret, lastNewLine, firstCharacter: indentationLevel });
 
          const newText =
             text.value.substring(0, event.target.selectionStart) +
@@ -82,44 +78,17 @@ function App() {
                />
             </div>
             <div className="bg-slate-100 overflow-y-scroll flex-1 flex flex-col p-4">
-               {lines.map((line, index) => (
-                  <Parser>{line}</Parser>
-               ))}
+               <Parser data={parse(text.value)} />
             </div>
          </div>
       </div>
    );
 }
 
-function Parser({ children: line }) {
-   const split = line.split(/\s+/);
-
-   // TODO Section
-   if (split[0] === "*" && split[1] === "TODO") {
-      return (
-         <div className="my-2">
-            <span className="bg-yellow-400 rounded px-1 font-semibold">
-               TODO
-            </span>{" "}
-            <span>{split.slice(2).join(" ")}</span>
-         </div>
-      );
-   }
-
-   if (split[0] === "*") {
-      return (
-         <h1 className="text-2xl font-bold my-4">{split.slice(1).join(" ")}</h1>
-      );
-   } else if (split[0] === "**") {
-      return (
-         <h1 className="text-xl font-bold my-4">{split.slice(1).join(" ")}</h1>
-      );
-   } else if (split[0] === "***") {
-      return (
-         <h1 className="text-md font-bold my-4">{split.slice(1).join(" ")}</h1>
-      );
-   } else {
-      return <span>{line}</span>;
+function Parser({ data }) {
+   // const split = data.tag.split(/\s+/);
+   for (let child of data.children) {
+      console.log(child);
    }
 }
 
