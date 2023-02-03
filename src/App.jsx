@@ -1,20 +1,63 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+
+const tabSize = 4;
 
 function App() {
-   const [text, setText] = useState("");
+   const [text, setText] = useState({
+      value: "",
+      caret: -1,
+      target: null,
+   });
+
    const [lines, setLines] = useState([]);
+   const textAreaRef = useRef(null);
 
    useEffect(() => {
-      setText(localStorage.getItem("text"));
-      setLines(localStorage.getItem("text")?.split("\n") ?? []);
-   }, []);
+      printTree(parse(text.value));
 
-   function handleChange(event) {
-      const value = event.target.value;
-      setText(value);
-      setLines(value.split("\n"));
+      if (text.caret >= 0) {
+         text.target.setSelectionRange(
+            text.caret + tabSize,
+            text.caret + tabSize
+         );
+      }
+   }, [text]);
 
-      localStorage.setItem("text", value);
+   function handleText(event) {
+      setText({
+         value: event.target.value,
+         caret: -1,
+         target: event.target,
+      });
+   }
+
+   function handleKeyDown(event) {
+      if (event.code === "Enter") {
+         event.preventDefault();
+
+         /**
+          * When I press "Enter", I search from the caret and backwards until I find a \n.
+          * Then, I analyze how many spaces there are between
+          * that first \n and the first character. That's my indentation.
+          */
+         const caret = event.target.selectionEnd;
+         const lastNewLine = text.value.lastIndexOf("\n", caret);
+         const indentationLevel = text.value.slice(lastNewLine).search(/\S/);
+
+         console.log({ caret, lastNewLine, firstCharacter: indentationLevel });
+
+         const newText =
+            text.value.substring(0, event.target.selectionStart) +
+            "\n" +
+            " ".repeat(tabSize) +
+            text.value.substring(event.target.selectionEnd, text.value.length);
+
+         setText({
+            value: newText,
+            caret: event.target.selectionStart,
+            target: event.target,
+         });
+      }
    }
 
    return (
@@ -27,10 +70,15 @@ function App() {
          <div className="flex border rounded overflow-hidden h-full">
             <div className="flex-1">
                <textarea
-                  value={text}
+                  ref={textAreaRef}
+                  value={text.value}
                   placeholder="Start typing..."
                   className="w-full h-full resize-none outline-none p-4"
-                  onChange={handleChange}
+                  onChange={handleText}
+                  onKeyDown={event =>
+                     event.key === "Enter" ? event.preventDefault() : null
+                  }
+                  onKeyUp={handleKeyDown}
                />
             </div>
             <div className="bg-slate-100 overflow-y-scroll flex-1 flex flex-col p-4">
@@ -47,7 +95,7 @@ function Parser({ children: line }) {
    const split = line.split(/\s+/);
 
    // TODO Section
-   if (split[1] === "TODO") {
+   if (split[0] === "*" && split[1] === "TODO") {
       return (
          <div className="my-2">
             <span className="bg-yellow-400 rounded px-1 font-semibold">
@@ -72,6 +120,84 @@ function Parser({ children: line }) {
       );
    } else {
       return <span>{line}</span>;
+   }
+}
+
+/**
+ * Parses .org documents, returning an AST.
+ */
+function _parse({ tag, children }) {
+   const elements = [];
+   let element = null;
+   let indentation = 0;
+
+   for (let line of children) {
+      let isTag = /^(\*+)/.test(line);
+      let tag = /^(\*+)/.exec(line)?.[1];
+
+      if (isTag) {
+         // If it is a tag
+         let newIndentation = tag.length;
+
+         if (newIndentation <= indentation) {
+            // We're changing indentation level
+            elements.push(_parse(element));
+            element = {
+               tag: line,
+               children: [],
+            };
+         } else {
+            if (element) {
+               element.children.push(line);
+            } else {
+               indentation = newIndentation;
+               element = {
+                  tag: line,
+                  children: [],
+               };
+            }
+         }
+      } else {
+         // It's not a tag
+         if (element) {
+            element.children.push(line);
+         } else {
+            elements.push(line);
+         }
+      }
+   }
+
+   elements.push(element);
+
+   return {
+      tag,
+      children: elements,
+   };
+}
+
+function parse(orgText) {
+   const children = orgText.split("\n");
+   return _parse({ tag: "root", children });
+}
+
+function printTree({ tag, children }, level = 0) {
+   try {
+      console.log(tag);
+
+      if (!children) return;
+
+      for (let child of children) {
+         if (child.constructor === String) {
+            if (child) {
+               console.log(" ".repeat(level + 1) + " " + child);
+            }
+         } else {
+            // debugger;
+            printTree(child, level + 1);
+         }
+      }
+   } catch (e) {
+      console.log(e);
    }
 }
 
