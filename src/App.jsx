@@ -75,10 +75,10 @@ function App() {
                   placeholder="Start typing..."
                   className="w-full h-full resize-none outline-none p-4"
                   onChange={handleText}
-                  onKeyDown={event =>
-                     event.key === "Enter" ? event.preventDefault() : null
-                  }
-                  onKeyUp={handleKeyDown}
+                  // onKeyDown={event =>
+                  //    event.key === "Enter" ? event.preventDefault() : null
+                  // }
+                  // onKeyUp={handleKeyDown}
                />
             </div>
             <div className="bg-slate-100 overflow-y-scroll flex-1 flex flex-col p-4">
@@ -167,7 +167,9 @@ function _parse({ tag, children }) {
       }
    }
 
-   elements.push(element);
+   if (element) {
+      elements.push(_parse(element));
+   }
 
    return {
       tag,
@@ -182,7 +184,7 @@ function parse(orgText) {
 
 function printTree({ tag, children }, level = 0) {
    try {
-      console.log(tag);
+      console.log(" ".repeat(level) + " " + tag);
 
       if (!children) return;
 
