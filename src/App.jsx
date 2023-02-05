@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { OrgParser } from "./utils/OrgParser";
 
 const tabSize = 4;
 
@@ -11,6 +12,7 @@ function App() {
 
    const [lines, setLines] = useState([]);
    const textAreaRef = useRef(null);
+   const parser = useMemo(() => new OrgParser(), []);
 
    useEffect(() => {
       if (text.caret >= 0) {
@@ -19,6 +21,10 @@ function App() {
             text.caret + tabSize
          );
       }
+
+      let parsed = parser.parse(text.value);
+      console.clear();
+      parser.printTree(parsed);
    }, [text]);
 
    function handleText(event) {
@@ -78,98 +84,11 @@ function App() {
                />
             </div>
             <div className="bg-slate-100 overflow-y-scroll flex-1 flex flex-col p-4">
-               <Parser data={parse(text.value)} />
+               {/* <Parser data={OrgParser.parse(text.value)} /> */}
             </div>
          </div>
       </div>
    );
-}
-
-function Parser({ data }) {
-   // const split = data.tag.split(/\s+/);
-   for (let child of data.children) {
-      console.log(child);
-   }
-}
-
-/**
- * Parses .org documents, returning an AST.
- */
-function _parse({ tag, children }) {
-   const elements = [];
-   let element = null;
-   let indentation = 0;
-
-   for (let line of children) {
-      let isTag = /^(\*+)/.test(line);
-      let tag = /^(\*+)/.exec(line)?.[1];
-
-      if (isTag) {
-         // If it is a tag
-         let newIndentation = tag.length;
-
-         if (newIndentation <= indentation) {
-            // We're changing indentation level
-            elements.push(_parse(element));
-            element = {
-               tag: line,
-               children: [],
-            };
-         } else {
-            if (element) {
-               element.children.push(line);
-            } else {
-               indentation = newIndentation;
-               element = {
-                  tag: line,
-                  children: [],
-               };
-            }
-         }
-      } else {
-         // It's not a tag
-         if (element) {
-            element.children.push(line);
-         } else {
-            elements.push(line);
-         }
-      }
-   }
-
-   if (element) {
-      elements.push(_parse(element));
-   }
-
-   return {
-      tag,
-      children: elements,
-   };
-}
-
-function parse(orgText) {
-   const children = orgText.split("\n");
-   return _parse({ tag: "root", children });
-}
-
-function printTree({ tag, children }, level = 0) {
-   try {
-      console.log(" ".repeat(level) + " " + tag);
-
-      if (!children) return;
-
-      for (let child of children) {
-         if (child.constructor === String) {
-            if (child) {
-               console.log(" ".repeat(level + 1) + " " + child);
-            }
-         } else {
-            // debugger;
-            printTree(child, level + 1);
-         }
-      }
-   } catch (e) {
-      console.log(e);
-   }
 }
 
 export default App;
