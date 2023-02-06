@@ -23,8 +23,8 @@ function App() {
       }
 
       let parsed = parser.parse(text.value);
-      console.clear();
-      parser.printTree(parsed);
+      // console.clear();
+      // parser.printTree(parsed);
    }, [text]);
 
    function handleText(event) {
@@ -84,9 +84,24 @@ function App() {
                />
             </div>
             <div className="bg-slate-100 overflow-y-scroll flex-1 flex flex-col p-4">
-               {/* <Parser data={OrgParser.parse(text.value)} /> */}
+               <Parser data={parser.parse(text.value)} />
             </div>
          </div>
+      </div>
+   );
+}
+
+function Parser({ data }) {
+   console.log(data);
+
+   if (!data.children) return <div className="mb-2">{data}</div>;
+
+   return (
+      <div className="border p-2 rounded-lg grid gap-2">
+         <h1 className="text-gray-400">{data?.tag}</h1>
+         {data?.children?.map(child => (
+            <Parser data={child} />
+         ))}
       </div>
    );
 }
