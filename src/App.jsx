@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { OrgParser } from "./utils/OrgParser";
+import { tutorialText } from "./utils/tutorialText";
 
 const tabSize = 4;
 
@@ -15,6 +16,24 @@ function App() {
    const parser = useMemo(() => new OrgParser(), []);
 
    useEffect(() => {
+      if (!localStorage.getItem("text")) {
+         return setText({
+            value: tutorialText,
+            caret: -1,
+            target: null,
+         });
+      }
+
+      setText({
+         value: localStorage.getItem("text"),
+         caret: -1,
+         target: null,
+      });
+   }, []);
+
+   useEffect(() => {
+      localStorage.setItem("text", text.value);
+
       if (text.caret >= 0) {
          text.target.setSelectionRange(
             text.caret + tabSize,
@@ -92,16 +111,55 @@ function App() {
 }
 
 function Parser({ data }) {
-   console.log(data);
+   const [open, setOpen] = useState(true);
+   const [hovered, setHovered] = useState(false);
+
+   useEffect(() => {
+      setOpen(true);
+   }, [data]);
 
    if (!data.children) return <div className="mb-2">{data}</div>;
 
+   function removeStars(text) {
+      if (!text) return null;
+
+      const exec = /\*+ *(.*)/.exec(text);
+
+      if (exec) {
+         return exec[1];
+      }
+   }
+
    return (
-      <div className="border p-2 rounded-lg grid gap-2">
-         <h1 className="text-gray-400">{data?.tag}</h1>
-         {data?.children?.map(child => (
-            <Parser data={child} />
-         ))}
+      <div
+         onMouseEnter={() => setHovered(true)}
+         onMouseLeave={() => setHovered(false)}
+         className={`border ${
+            hovered ? "border-blue-400 bg-white" : ""
+         } p-2 rounded-lg grid gap-2`}
+      >
+         <header
+            className="flex justify-between"
+            onClick={() => setOpen(o => !o)}
+         >
+            <h1 className={`text-gray-${hovered ? 800 : 400}`}>
+               {removeStars(data?.tag)}
+            </h1>
+            <button>
+               <img
+                  src="chevron.svg"
+                  width={14}
+                  style={{
+                     transform: `rotate(${open ? 270 : 90}deg)`,
+                     opacity: 0.25,
+                  }}
+               />
+            </button>
+         </header>
+         {open &&
+            data?.children?.map((child, index) => (
+               <Parser key={index} data={child} />
+            ))}
       </div>
    );
 }
