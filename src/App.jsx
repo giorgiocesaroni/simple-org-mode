@@ -55,7 +55,7 @@ function App() {
    }
 
    return (
-      <div className="h-full p-3 pb-8 flex flex-col touch-none">
+      <div className="h-full p-3 pb-8 flex flex-col">
          <header className="grid mb-8">
             <h1 className="text-xl font-bold">org-mode on the web</h1>
             <p className="text-slate-400">Let's get organized!</p>
@@ -75,7 +75,7 @@ function App() {
             )}
             <div className="bg-slate-100 overflow-y-scroll flex-1 flex gap-4 flex-col p-4">
                <header className="flex" onClick={() => setEdit(e => !e)}>
-                  <button className="ml-auto">
+                  <button className="ml-auto" style={{ opacity: 0.5 }}>
                      {edit ? (
                         <img src="fullscreen.svg" width={16} height={16} />
                      ) : (
@@ -97,6 +97,22 @@ function Parser({ data }) {
    const [hovered, setHovered] = useState(false);
    console.log(data);
 
+   let isTodo = /\** *TODO/.test(data.tag);
+   let isDone = /\** *DONE/.test(data.tag);
+
+   let todoBackground = isTodo
+      ? "bg-orange-100"
+      : isDone
+      ? "bg-green-100"
+      : "bg-white";
+
+   let todoBorder = isTodo
+      ? "border-orange-300"
+      : isDone
+      ? "border-green-300"
+      : "bg-white";
+   console.log({ isTodo });
+
    if (!data.children) return <div className="mb-2">{data}</div>;
 
    function removeStars(text) {
@@ -111,16 +127,12 @@ function Parser({ data }) {
 
    return (
       <div
-         // onMouseEnter={() => setHovered(true)}
-         // onMouseLeave={() => setHovered(false)}
          onTouchStart={() => setHovered(true)}
          onTouchEnd={() => setHovered(false)}
-         className={`border border-sm bg-white ${
-            hovered ? "border-blue-400" : ""
-         } p-2 rounded-lg grid gap-2`}
+         className={`border-2 border-sm p-2 rounded-lg grid gap-2 ${todoBorder} ${todoBackground}`}
       >
          <header
-            className="flex justify-between"
+            className="flex justify-between "
             onClick={() => setOpen(o => !o)}
          >
             <h1 className={`text-gray-${hovered ? "800" : "400"}`}>
@@ -131,6 +143,7 @@ function Parser({ data }) {
                   <img
                      src="chevron.svg"
                      width={14}
+                     height={14}
                      style={{
                         transform: `rotate(${open ? 270 : 90}deg)`,
                         opacity: 0.25,
