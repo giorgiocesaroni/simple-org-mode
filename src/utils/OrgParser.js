@@ -52,11 +52,13 @@ export class OrgParser {
                }
             }
          } else {
-            // It's not a tag
-            if (element) {
-               element.children.push(line);
-            } else {
-               elements.push(line);
+            if (line) {
+               // It's not a tag
+               if (element) {
+                  element.children.push(line);
+               } else {
+                  elements.push(line);
+               }
             }
          }
       }
