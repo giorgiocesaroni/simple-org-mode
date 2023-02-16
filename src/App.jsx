@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { OrgParser } from "./utils/OrgParser";
 import { tutorialText } from "./utils/tutorialText";
+import { intervalToDuration } from "date-fns/esm";
 
 const tabSize = 4;
 
@@ -95,10 +96,10 @@ function App() {
 function Parser({ data }) {
    const [open, setOpen] = useState(true);
    const [hovered, setHovered] = useState(false);
-   console.log(data);
 
    let isTodo = /\** *TODO/.test(data.tag);
    let isDone = /\** *DONE/.test(data.tag);
+   let isTime = /DEADLINE: <(\d{4}-\d{2}-\d{2})( \w{3})?>/;
 
    let todoBackground = isTodo
       ? "bg-orange-100"
@@ -111,9 +112,30 @@ function Parser({ data }) {
       : isDone
       ? "border-green-300"
       : "bg-white";
-   console.log({ isTodo });
 
-   if (!data.children) return <div className="mb-2">{data}</div>;
+   if (!data.children) {
+      // Deadline
+      if (isTime.test(data)) {
+         let time = new Date(isTime.exec(data)[1]);
+         let expired = new Date() > time;
+
+         let timeRemaining = intervalToDuration({
+            start: new Date(),
+            end: time,
+         });
+
+         return (
+            <div>
+               <span className="bg-orange-300 rounded p-1 text-sm">
+                  ⌚ {timeRemaining.days} days{" "}
+                  {expired ? "overdue" : "remaining"}
+               </span>
+            </div>
+         );
+      }
+
+      return <div className="mb-2 text-gray-600">{data}</div>;
+   }
 
    function removeStars(text) {
       if (!text) return null;
@@ -129,13 +151,13 @@ function Parser({ data }) {
       <div
          onTouchStart={() => setHovered(true)}
          onTouchEnd={() => setHovered(false)}
-         className={`border-2 border-sm p-2 rounded-lg grid gap-2 ${todoBorder} ${todoBackground}`}
+         className={`shadow-sm border border-sm p-2 rounded-lg grid gap-2 ${todoBorder} ${todoBackground}`}
       >
          <header
             className="flex justify-between "
             onClick={() => setOpen(o => !o)}
          >
-            <h1 className={`text-gray-${hovered ? "800" : "400"}`}>
+            <h1 className={`font-bold text-gray-700`}>
                {removeStars(data?.tag)}
             </h1>
             {data.children.length > 0 && (
