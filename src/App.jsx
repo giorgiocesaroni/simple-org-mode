@@ -55,7 +55,7 @@ function App() {
    }
 
    return (
-      <div className="h-full p-3 pb-8 flex flex-col">
+      <div className="h-full p-3 pb-8 flex flex-col max-w-5xl mx-auto">
          <header className="grid mb-8">
             <h1 className="text-xl font-bold">org-mode on the web</h1>
             <p className="text-slate-400">Let's get organized!</p>
