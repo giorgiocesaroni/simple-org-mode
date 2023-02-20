@@ -99,7 +99,8 @@ function Parser({ data }) {
 
    let isTodo = /\** *TODO/.test(data.tag);
    let isDone = /\** *DONE/.test(data.tag);
-   let isTime = /DEADLINE: <(\d{4}-\d{2}-\d{2})( \w{3})?>/;
+   let isDeadline = /DEADLINE: <(\d{4}-\d{2}-\d{2})( \w{3})?>/;
+   let isTime = /SCHEDULED: <(\d{4}-\d{2}-\d{2})( \w{3})?>/;
 
    let todoBackground = isTodo
       ? "bg-orange-100"
@@ -115,8 +116,8 @@ function Parser({ data }) {
 
    if (!data.children) {
       // Deadline
-      if (isTime.test(data)) {
-         let time = new Date(isTime.exec(data)[1]);
+      if (isDeadline.test(data)) {
+         let time = new Date(isDeadline.exec(data)[1]);
          let expired = new Date() > time;
 
          let timeRemaining = intervalToDuration({
@@ -126,9 +127,24 @@ function Parser({ data }) {
 
          return (
             <div>
-               <span className="bg-orange-300 rounded p-1 text-sm">
-                  ⌚ {timeRemaining.days} days{" "}
-                  {expired ? "overdue" : "remaining"}
+               <span className="bg-orange-500 text-white font-semibold rounded p-1 text-sm">
+                  ⏳ {timeRemaining.years ? `${timeRemaining.years} y. ` : ""}
+                  {timeRemaining.months
+                     ? `${timeRemaining.months} m. `
+                     : ""}{" "}
+                  {timeRemaining.days} days {expired ? "overdue" : "remaining"}
+               </span>
+            </div>
+         );
+      }
+
+      if (isTime.test(data)) {
+         let time = new Date(isTime.exec(data)[1]);
+
+         return (
+            <div>
+               <span className="bg-blue-500 text-white font-semibold rounded p-1 text-sm">
+                  🗓️ {time.toLocaleDateString()}
                </span>
             </div>
          );
@@ -147,6 +163,16 @@ function Parser({ data }) {
       }
    }
 
+   function removeTags(text) {
+      if (!text) return null;
+
+      const exec = /\**\s*(TODO|SCHEDULED)?\s*(.*)/.exec(text);
+
+      if (exec) {
+         return exec[2];
+      }
+   }
+
    return (
       <div
          onTouchStart={() => setHovered(true)}
@@ -158,7 +184,7 @@ function Parser({ data }) {
             onClick={() => setOpen(o => !o)}
          >
             <h1 className={`font-bold text-gray-700`}>
-               {removeStars(data?.tag)}
+               {removeTags(removeStars(data?.tag))}
             </h1>
             {data.children.length > 0 && (
                <button>
